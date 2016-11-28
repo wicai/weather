@@ -1,0 +1,45 @@
+import math
+import tweepy
+from weather.map.models import Tweets
+from weather.map.models import Region
+from weather.map.models import Weather
+from weather.map.models import Stats
+
+#Given a region, goes through all the tweets of that region and figures out a happiness ratio
+
+def analyze(r): # r is the region
+    #weather analysis
+    tot = 0
+    weatherlist = Weather.objects.filter(region = r)
+    tot += math.fabs((weatherlist.all()[0].temperature - 273.5) - 23)
+
+    #tweets analysis
+    happy = 0
+    sad = 0
+    rt = 0
+    # for each region, go through the tweets, add to happy and sad
+    tweetlist = Tweets.objects.filter(region = r)
+    for x in range(1, len(tweetlist.all())):
+        happy = happy + tweetparser(tweetlist.all()[x].tweet, 'happy')
+        happy = happy + tweetparser(tweetlist.all()[x].tweet, ':)')
+        happy = happy + tweetparser(tweetlist.all()[x].tweet, 'excite')
+        happy = happy + tweetparser(tweetlist.all()[x].tweet, 'love')
+        sad = sad + tweetparser(tweetlist.all()[x].tweet, 'sad')
+        sad = sad + tweetparser(tweetlist.all()[x].tweet, 'dread')
+        sad = sad + tweetparser(tweetlist.all()[x].tweet, ':(')
+        sad = sad + tweetparser(tweetlist.all()[x].tweet, 'depress')
+    if sad != 0:
+        rt = happy/sad
+    s = Stats.objects.create(region = r, ratio = rt, trating = tot)
+    s.save()
+
+def tweetparser(text, word): #how many times does word appear in text?
+    c = text.find(word) 
+    if (c>=0):
+        return 1 + tweetparser(text[(c + len(word)):], word)
+    else:
+        return 0;
+
+
+    
+
